@@ -37,3 +37,9 @@ yarn-error.log*
 *.db
 *.sqlite
 *.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+env/
+assistant/.venv/
