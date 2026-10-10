@@ -32,3 +32,8 @@ yarn-error.log*
 
 # Zip files
 *.zip
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
