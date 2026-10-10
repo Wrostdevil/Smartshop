@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: shopsmart-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shopsmart
+      POSTGRES_PASSWORD: shopsmart
+      POSTGRES_DB: shopsmart
+    ports:
+      - "5432:5432"
+    volumes:
+      - shopsmart-pgdata:/var/lib/postgresql/data
+      - ./backend/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopsmart -d shopsmart"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: shopsmart-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env.docker
+    ports:
+      - "8000:8000"
+    command: sh -c "alembic upgrade head && uvicorn app.app:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build: ./frontend
+    container_name: shopsmart-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  shopsmart-pgdata:
