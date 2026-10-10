@@ -1,0 +1,233 @@
+# ShopSmart AI — AI-Powered E-Commerce Platform
+
+> **A full-stack intelligent shopping assistant combining modern e-commerce with Retrieval-Augmented Generation (RAG) for contextual product recommendations and policy-aware customer support.**
+
+---
+
+## 🎯 Overview
+
+ShopSmart AI is a production-ready, full-stack e-commerce platform that demonstrates the practical integration of **Large Language Models (LLMs)** and **vector search** into a real shopping experience. It features two core AI-powered modules:
+
+| Module | Capability | Technology |
+|--------|------------|------------|
+| **🛍️ AI Shopper (Module 1)** | Intent-based product recommendations, smart catalog browsing, session cart, checkout with order tracking | FastAPI + PostgreSQL + pgvector |
+| **🤖 RAG Support Agent (Module 2)** | Document upload → chunking → embedding → grounded Q&A with citations + confidence scoring + escalation | pgvector (PostgreSQL) + hash embeddings (zero-download, 384-d) |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐     /api/*      ┌──────────────────┐     ┌────────────────────────┐
+│   React + Vite  │ ──────────────▶ │    FastAPI       │ ───▶ │  PostgreSQL 16 +       │
+│   (Port 5173)   │                 │    (Port 8000)   │     │  pgvector (Port 5432)  │
+└─────────────────┘                 └──────────────────┘     └────────────────────────┘
+        │                                    │                          │
+        │                                    │                          ├── products / carts / orders
+        │                                    │                          ├── policy_documents (keyword fallback)
+        │                                    │                          └── knowledge_documents + document_chunks (vector RAG)
+        │                                    ▼
+        │                           ┌──────────────────┐
+        │                           │  AI Endpoints    │
+        │                           │  • /recommend    │
+        │                           │  • /rag-query    │
+        │                           │  • /documents/   │
+        │                           │    upload        │
+        └──────────────────────────▶ └──────────────────┘
+```
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Vite, Vanilla CSS (no UI library), ESLint + Oxlint |
+| **Backend** | FastAPI, SQLAlchemy 2.0, Alembic, Pydantic v2 |
+| **Database** | PostgreSQL 16 + pgvector (production) / SQLite (dev fallback) |
+| **Vector Search** | pgvector (cosine similarity) with SQLite cosine fallback |
+| **Embeddings** | Deterministic hash embeddings (384-dim, zero external dependencies) |
+| **Containerization** | Docker Compose (multi-service: frontend, backend, postgres) |
+| **Reverse Proxy** | Nginx (production frontend serving + API proxy) |
+
+---
+
+## ✨ Features
+
+### Module 1: Intelligent Shopping Experience
+- **Smart Catalog** — Search, filter, sort, paginate products with debounced queries
+- **Product Comparison** — Side-by-side comparison panel (up to 4 products)
+- **Wishlist & Cart** — Persistent session-based cart stored in PostgreSQL
+- **Checkout & Orders** — Generates `ORD-2026-XXXX` format order IDs with timeline tracking
+- **AI Shopper Recommendations** — `POST /recommend` accepts natural language intent (e.g., *"gaming laptop under $1500 with good battery"*) and returns ranked products with reasoning
+
+### Module 2: RAG-Powered Customer Support
+- **Multi-format Ingestion** — Upload PDF, Markdown, JSON, or TXT policy/knowledge documents
+- **Smart Chunking** — 800-character chunks with 120-character overlap for context preservation
+- **Zero-Download Embeddings** — Deterministic 384-dimensional hash embeddings (no Hugging Face downloads, no API keys)
+- **Grounded Answers** — Responses include **citations** (document + chunk references) and **confidence scores**
+- **Escalation Flow** — Low-confidence answers (`confidence < 0.6`) automatically set `followUpRequired: true` with one-click support ticket creation
+- **Hybrid Search** — Vector similarity (pgvector) + keyword fallback (policy_documents table)
+
+---
+
+## 🚀 Quick Start
+
+### Option 1: Docker Compose (Recommended — Full Stack with pgvector)
+```bash
+docker compose up --build
+```
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| API Docs (Swagger) | http://localhost:8000/docs |
+| Database | `postgresql://shopsmart:shopsmart@localhost:5432/shopsmart` |
+
+---
+
+### Option 2: Local Development (No Docker — SQLite Fallback)
+```bash
+# Terminal 1: Backend
+cd backend
+pip install -r requirements.txt
+# Windows PowerShell:
+$env:SQLITE_URL="sqlite:///./shopsmart.db"
+# Windows CMD:
+set SQLITE_URL=sqlite:///./shopsmart.db
+python main.py
+
+# Terminal 2: Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+### Option 3: Local PostgreSQL (Without Docker Compose)
+```bash
+# Start Postgres 16 with pgvector (e.g., via `pgvector/pgvector:pg16`)
+set DATABASE_URL=postgresql+psycopg2://shopsmart:shopsmart@localhost:5432/shopsmart
+cd backend
+alembic upgrade head
+python main.py
+```
+
+---
+
+## 🧪 Verification & Testing
+
+```bash
+# Run backend tests
+cd backend && python -m pytest tests/ -q
+
+# Test RAG query
+curl -X POST localhost:8000/rag-query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Can I return an opened laptop?"}'
+
+# Upload a policy document
+curl -F "file=@policy.md" "localhost:8000/documents/upload?section=Returns"
+
+# Build frontend for production
+cd frontend && npm run build
+```
+
+---
+
+## ⚙️ Environment Variables
+
+### Backend (`.env` or `backend/.env.docker`)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | Built from `POSTGRES_*` | Primary PostgreSQL connection string |
+| `POSTGRES_USER` | `shopsmart` | Database user |
+| `POSTGRES_PASSWORD` | `shopsmart` | Database password |
+| `POSTGRES_HOST` | `localhost` | Database host |
+| `POSTGRES_PORT` | `5432` | Database port |
+| `POSTGRES_DB` | `shopsmart` | Database name |
+| `SQLITE_URL` | *unset* | **Opt-out fallback** — enables SQLite mode for offline/tests |
+| `PORT` | `8000` | Backend server port |
+
+### Frontend (`frontend/.env` or `frontend/.env.example`)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | `/api` | API base path. `/api` = nginx proxy (Docker); `http://localhost:8000` = direct (local dev) |
+
+---
+
+## 📁 Project Structure
+
+```
+ShopSmart-AI/
+├── backend/
+│   ├── app/
+│   │   ├── routers/          # API endpoints (auth, cart, order, product, AI, support)
+│   │   ├── services/         # Business logic (cart, order, product, RAG, review, user)
+│   │   ├── models/           # SQLAlchemy models (product, cart, order, knowledge, etc.)
+│   │   ├── schemas/          # Pydantic request/response schemas
+│   │   ├── data/             # Seed data (mock products)
+│   │   └── db/               # Database session & init
+│   ├── alembic/              # Database migrations
+│   ├── tests/                # Pytest suite
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── main.py               # FastAPI app entry point
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # React components (9 modules)
+│   │   ├── lib/              # API client
+│   │   ├── data/             # Mock data
+│   │   └── assets/           # Images, icons
+│   ├── nginx.conf            # Production nginx config
+│   ├── Dockerfile
+│   └── vite.config.js        # Vite + API proxy config
+├── docker-compose.yml        # Multi-service orchestration
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🔑 Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Hash embeddings (no HF/transformers)** | Zero external dependencies, deterministic, works offline, no GPU needed, 384-dim fits pgvector efficiently |
+| **pgvector + SQLite cosine fallback** | Production uses battle-tested Postgres; local dev works without Docker |
+| **Session-based cart (no auth required)** | Reduces friction for demo/eval; easily extensible to user accounts |
+| **Nginx reverse proxy in Docker** | Single port exposure (5173), proper SPA routing, API proxying, gzip, caching |
+| **Alembic migrations** | Schema versioning for team collaboration and CI/CD |
+| **Component-based frontend (no UI lib)** | Zero bloat, full control, demonstrates React fundamentals |
+
+---
+
+## 📈 Potential Extensions
+
+- **User Authentication** — JWT + OAuth (Google/GitHub) with role-based access
+- **Real Embeddings** — Swap hash embeddings for `sentence-transformers` or OpenAI/Cohere APIs
+- **Vector DB** — Migrate to Pinecone, Weaviate, or Qdrant for scale
+- **Admin Dashboard** — Product management, order fulfillment, analytics
+- **Payment Integration** — Stripe/PayPal checkout flow
+- **Webhooks** — Order notifications, inventory sync
+- **Multi-language RAG** — Support non-English documents/queries
+- **Observability** — OpenTelemetry, Prometheus/Grafana, structured logging
+
+---
+
+## 📄 License
+
+This project was built for the **ShopSmart AI Hackathon**. See `ShopSmartAI_Hackathon_Usecase.docx` for the original requirements.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+**Built with ❤️ for the ShopSmart AI Hackathon** — Demonstrating practical AI integration in e-commerce.

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: shopsmart-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: shopsmart_user
+      POSTGRES_PASSWORD: shopsmart_pass
+      POSTGRES_DB: shopsmart
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopsmart_user -d shopsmart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  shopsmart-rag:
+    build: .
+    container_name: shopsmart-rag-service
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: "ShopSmart RAG Assistant"
+      APP_ENV: "production"
+      APP_HOST: "0.0.0.0"
+      APP_PORT: 8000
+      DATABASE_URL: "postgresql+psycopg://shopsmart_user:shopsmart_pass@postgres:5432/shopsmart"
+      ADMIN_API_KEY: "shopsmart-admin-key-2026"
+      EMBEDDING_PROVIDER: "fastembed"
+      EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+      EMBEDDING_DIM: 384
+      LLM_PROVIDER: "mock"
+      GOOGLE_API_KEY: ""
+    volumes:
+      - ./data:/app/data
+
+volumes:
+  pgdata:

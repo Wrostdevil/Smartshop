@@ -1,0 +1,17 @@
+uvicorn
+fastapi
+fastapi-pagination
+pytest
+httpx
+SQLalchemy
+marshmallow-sqlalchemy
+psycopg2-binary
+alembic
+python-jose
+passlib
+python-dotenv
+colorama
+email-validator
+python-multipart
+pypdf
+pgvector

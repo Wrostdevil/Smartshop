@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopSmart AI — Policy Assistant & Knowledge Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121826;
+            --bg-card: rgba(22, 30, 49, 0.75);
+            --bg-card-hover: rgba(30, 41, 67, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-focus: #3b82f6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%);
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(18, 24, 38, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-text span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: var(--accent-emerald);
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            box-shadow: 0 0 10px var(--accent-emerald);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            flex: 1;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Chat Assistant View */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-height: calc(100vh - 280px);
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
+            line-height: 1.6;
+            font-size: 0.925rem;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+        }
+
+        .message.assistant .message-bubble {
+            background: rgba(30, 41, 67, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .citation-container {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .citation-tag {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .citation-meta {
+            font-weight: 600;
+            color: #bfdbfe;
+        }
+
+        .confidence-pill {
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .confidence-HIGH {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .confidence-MEDIUM {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .confidence-LOW {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        /* Stream cursor */
+        .stream-cursor {
+            display: inline-block;
+            width: 7px;
+            height: 14px;
+            background-color: var(--accent-blue);
+            vertical-align: middle;
+            margin-left: 3px;
+            animation: blink 0.9s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .stream-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+            font-weight: 600;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            box-shadow: 0 0 8px #3b82f6;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .quick-queries {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            overflow-x: auto;
+            border-top: 1px solid var(--border-color);
+            background: rgba(18, 24, 38, 0.5);
+        }
+
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.775rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        .chat-input-area {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.75rem;
+            background: rgba(18, 24, 38, 0.9);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(10, 14, 23, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+            border: none;
+            color: #fff;
+            padding: 0 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Knowledge Studio Side Panel */
+        .policy-list {
+            padding: 1rem 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .policy-card {
+            background: rgba(30, 41, 67, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .policy-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .policy-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+
+        .policy-tags {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-pill {
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .active-pill {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo">S</div>
+            <div class="brand-text">
+                <h1>ShopSmart AI</h1>
+                <span>Module 2: Customer Knowledge Assistant (RAG)</span>
+            </div>
+        </div>
+        <div class="status-badge" id="service-status">
+            <div class="status-dot"></div>
+            <span id="status-text">FastAPI & pgvector Ready</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left: RAG Customer Knowledge Assistant -->
+        <section class="panel">
+            <div class="panel-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <h2>Policy Copilot</h2>
+                    <span class="stream-badge"><span class="pulse-dot"></span> Thinking & Streaming</span>
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);" id="session-label">Session: demo-session-001</span>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="messages-container">
+                    <div class="message assistant">
+                        <div class="message-bubble">
+                            Hello! I am the <strong>ShopSmart AI Policy Assistant</strong>. I provide grounded answers based on our approved return, refund, shipping, warranty, and membership policies with verified citations. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-queries">
+                    <button class="quick-btn" onclick="askPreset('Can I return an opened laptop?')">Can I return an opened laptop?</button>
+                    <button class="quick-btn" onclick="askPreset('What is the refund processing timeline?')">What is the refund timeline?</button>
+                    <button class="quick-btn" onclick="askPreset('Does Prime membership include free delivery?')">Prime free delivery?</button>
+                    <button class="quick-btn" onclick="askPreset('What is the warranty period for this smartphone?')">Smartphone warranty?</button>
+                    <button class="quick-btn" onclick="askPreset('Can I cancel my order after shipment?')">Cancel after shipment?</button>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="question-input" placeholder="Ask any ShopSmart policy question..." onkeydown="handleKey(event)">
+                    <button class="send-btn" id="send-btn" onclick="sendQuestion()">Ask Assistant</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Knowledge Studio Preview -->
+        <aside class="panel">
+            <div class="panel-header">
+                <h2>Knowledge Studio</h2>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);" id="policy-count">5 Policies</span>
+            </div>
+
+            <div class="policy-list" id="policies-list">
+                <!-- Loaded dynamically -->
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const CONV_ID = "demo-session-" + Math.floor(Math.random() * 1000);
+        document.getElementById('session-label').innerText = `Session: ${CONV_ID}`;
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_BASE}/health`);
+                const data = await res.json();
+                document.getElementById('status-text').innerText = `${data.service} (${data.database})`;
+            } catch (e) {
+                document.getElementById('status-text').innerText = "Offline";
+            }
+        }
+
+        async function loadPolicies() {
+            try {
+                const res = await fetch(`${API_BASE}/api/ai/knowledge`);
+                const policies = await res.json();
+                const container = document.getElementById('policies-list');
+                document.getElementById('policy-count').innerText = `${policies.length} Policies`;
+                container.innerHTML = policies.map(p => `
+                    <div class="policy-card">
+                        <div class="policy-title">${p.title}</div>
+                        <div class="policy-tags">
+                            <span class="meta-pill active-pill">${p.status}</span>
+                            <span class="meta-pill">v${p.version}</span>
+                            <span class="meta-pill">${p.region}</span>
+                            <span class="meta-pill">${p.chunksCount} chunks</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Failed to load policies", e);
+            }
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter') sendQuestion();
+        }
+
+        function askPreset(q) {
+            document.getElementById('question-input').value = q;
+            sendQuestion();
+        }
+
+        async function sendQuestion() {
+            const input = document.getElementById('question-input');
+            const q = input.value.trim();
+            if (!q) return;
+
+            const container = document.getElementById('messages-container');
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.innerHTML = `<div class="message-bubble">${escapeHtml(q)}</div>`;
+            container.appendChild(userMsg);
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            // Generate unique message ID
+            const msgId = 'msg-' + Date.now();
+
+            // Create assistant message container with Streamed Answer
+            const assistantMsg = document.createElement('div');
+            assistantMsg.className = 'message assistant';
+            assistantMsg.innerHTML = `
+                <div class="message-bubble">
+                    <!-- Streamed Answer Content -->
+                    <div class="answer-content">
+                        <span id="answer-text-${msgId}"></span><span class="stream-cursor" id="cursor-${msgId}"></span>
+                    </div>
+
+                    <!-- Citations (if any) -->
+                    <div id="meta-container-${msgId}"></div>
+                </div>
+            `;
+            container.appendChild(assistantMsg);
+            container.scrollTop = container.scrollHeight;
+
+            const startTime = performance.now();
+            let thoughtCount = 0;
+            let fullText = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/ai/rag-query-stream`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, conversationId: CONV_ID })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned status ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop(); // keep partial chunk in buffer
+
+                    for (const evt of events) {
+                        const trimmed = evt.trim();
+                        if (!trimmed || !trimmed.startsWith('data:')) continue;
+                        const jsonStr = trimmed.replace(/^data:\s*/, '');
+                        try {
+                            const data = JSON.parse(jsonStr);
+
+                            if (data.type === 'thought') {
+                                // Background thought trace - not rendered to user
+                            } else if (data.type === 'token') {
+                                fullText += data.content;
+                                const textEl = document.getElementById(`answer-text-${msgId}`);
+                                if (textEl) {
+                                    textEl.innerText = fullText;
+                                }
+                                container.scrollTop = container.scrollHeight;
+                            } else if (data.type === 'metadata') {
+                                // Render citations if available (no confidence pill)
+                                const metaEl = document.getElementById(`meta-container-${msgId}`);
+                                if (metaEl) {
+                                    let citationsHtml = '';
+                                    if (data.sources && data.sources.length > 0) {
+                                        citationsHtml = '<div class="citation-container" style="margin-top: 0.75rem;">' + data.sources.map(s => `
+                                            <div class="citation-tag">
+                                                <div class="citation-meta">[Source] ${s.document} (${s.section || 'General'})</div>
+                                                <div>Version: ${s.version || '1.0'} | Region: ${s.region || 'IN'}${s.effectiveDate ? ` | Effective: ${s.effectiveDate}` : ''}</div>
+                                            </div>
+                                        `).join('') + '</div>';
+                                    }
+                                    metaEl.innerHTML = citationsHtml;
+                                }
+                            } else if (data.type === 'done') {
+                                const cursor = document.getElementById(`cursor-${msgId}`);
+                                if (cursor) cursor.style.display = 'none';
+                            }
+                        } catch (parseErr) {
+                            console.error('SSE parse error:', parseErr, jsonStr);
+                        }
+                    }
+                }
+
+                // Final cleanup: ensure cursor is hidden
+                const cursor = document.getElementById(`cursor-${msgId}`);
+                if (cursor) cursor.style.display = 'none';
+
+            } catch (err) {
+                console.error("Streaming error, falling back to static query:", err);
+                // Fallback to static endpoint if stream connection fails
+                try {
+                    const fallbackRes = await fetch(`${API_BASE}/api/ai/rag-query`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question: q, conversationId: CONV_ID })
+                    });
+                    const fallbackData = await fallbackRes.json();
+                    
+                    const textEl = document.getElementById(`answer-text-${msgId}`);
+                    if (textEl) textEl.innerText = fallbackData.answer || 'No answer provided.';
+                    
+                    const cursor = document.getElementById(`cursor-${msgId}`);
+                    if (cursor) cursor.style.display = 'none';
+
+                    const spinner = document.getElementById(`thinking-spinner-${msgId}`);
+                    if (spinner) spinner.style.display = 'none';
+
+                    const metaEl = document.getElementById(`meta-container-${msgId}`);
+                    if (metaEl && fallbackData.sources && fallbackData.sources.length > 0) {
+                        metaEl.innerHTML = '<div class="citation-container" style="margin-top: 0.75rem;">' + fallbackData.sources.map(s => `
+                            <div class="citation-tag">
+                                <div class="citation-meta">[Source] ${s.document} (${s.section || 'General'})</div>
+                                <div>Version: ${s.version || '1.0'} | Region: ${s.region || 'IN'}${s.effectiveDate ? ` | Effective: ${s.effectiveDate}` : ''}</div>
+                            </div>
+                        `).join('') + '</div>';
+                    }
+                } catch (fallbackErr) {
+                    const bubble = assistantMsg.querySelector('.message-bubble');
+                    if (bubble) {
+                        bubble.innerHTML = `<div style="color: #f43f5e;">Error processing request: ${escapeHtml(err.message)}</div>`;
+                    }
+                }
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Initialize on load
+        checkHealth();
+        loadPolicies();
+    </script>
+</body>
+</html>
