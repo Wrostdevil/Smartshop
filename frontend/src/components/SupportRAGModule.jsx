@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, ShieldCheck, FileText, CheckCircle2, AlertTriangle, Loader2, Upload, Trash2, Ticket } from 'lucide-react';
 import { api } from '../lib/api';
 
-export default function SupportRAGModule({ isLiveApi }) {
+export default function SupportRAGModule({ isLiveApi, onQueryStart }) {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [docs, setDocs] = useState([]);
@@ -35,6 +35,7 @@ export default function SupportRAGModule({ isLiveApi }) {
   const handleAskRAG = (inputQuery) => {
     const q = inputQuery || query;
     if (!q.trim()) return;
+    onQueryStart?.();
     setIsLoading(true);
     setTicketMsg('');
     if (isLiveApi) {

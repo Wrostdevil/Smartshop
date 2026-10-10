@@ -8,6 +8,7 @@ import CartDrawer from './components/CartDrawer';
 import AIShopperModule from './components/AIShopperModule';
 import SupportRAGModule from './components/SupportRAGModule';
 import OrderTrackingModule from './components/OrderTrackingModule';
+import RAGBotWidget from './components/RAGBotWidget';
 import { MOCK_PRODUCTS, USER_PROFILE, CATEGORIES as MOCK_CATS, BRANDS as MOCK_BRANDS } from './data/mockProducts';
 import { api, getSessionId, normalizeProduct } from './lib/api';
 import { Sparkles } from 'lucide-react';
@@ -346,6 +347,9 @@ export default function App() {
 
       <ProductDetailModal product={selectedDetailProduct} onClose={() => setSelectedDetailProduct(null)} onAddToCart={handleAddToCart} />
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveCartItem} onCheckout={handleCheckout} userProfile={USER_PROFILE} />
+
+      {/* Floating RAG Bot Widget - Always available on all pages */}
+      <RAGBotWidget isLiveApi={isLiveApi} backendUp={backendUp} />
 
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
         ShopSmart AI Autonomous Platform • Hackathon Edition {liveMode ? '• Postgres + RAG live' : '• Mock mode'}
